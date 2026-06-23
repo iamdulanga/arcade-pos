@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\PosTerminal;
+use App\Livewire\Admin\Categories;
+use App\Livewire\Admin\Products;
 
 Route::view('/', 'welcome');
 
@@ -15,7 +17,22 @@ Route::view('profile', 'profile')
 
 require __DIR__.'/auth.php';
 
-// POS Terminal
 Route::middleware(['auth'])->group(function () {
+
+    // POS Terminal
     Route::get('/pos', PosTerminal::class)->name('pos');
+
+    // Admin panel
+    Route::prefix('admin')->name('admin.')->group(function () {
+
+        Route::get('/categories', Categories::class)->name('categories.index');
+        Route::get('/products', Products::class)->name('products.index');
+
+        // Placeholders — to be built
+        Route::get('/suppliers', fn() => redirect()->route('admin.products.index'))->name('suppliers.index');
+        Route::get('/sales', fn() => redirect()->route('dashboard'))->name('sales.index');
+        Route::get('/customers', fn() => redirect()->route('dashboard'))->name('customers.index');
+
+    });
+
 });
