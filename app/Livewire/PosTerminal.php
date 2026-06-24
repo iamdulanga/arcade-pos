@@ -348,7 +348,8 @@ class PosTerminal extends Component
                 $this->showPaymentModal = false;
 
                 // 5. Redirect to receipt
-                $this->redirect(route('sales.receipt', $sale->id));
+                session()->flash('print_receipt', true);
+                return $this->redirect(route('sales.receipt', $sale->id));
             });
 
         } catch (\Exception $e) {

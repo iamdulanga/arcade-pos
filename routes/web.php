@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\PosTerminal;
 use App\Livewire\Admin\Categories;
 use App\Livewire\Admin\Products;
+use App\Http\Controllers\SaleController;
 
 Route::view('/', 'welcome');
 
@@ -34,5 +35,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/customers', fn() => redirect()->route('dashboard'))->name('customers.index');
 
     });
+
+    Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');
 
 });

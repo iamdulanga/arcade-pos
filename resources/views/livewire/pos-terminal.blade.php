@@ -1,41 +1,41 @@
-<div class="flex flex-col lg:flex-row min-h-screen bg-gray-100 overflow-hidden"
-     x-data="posTerminal()">
+<div class="flex overflow-hidden" style="height: calc(100vh - 40px);" x-data="posTerminal()">
+
     {{-- ===================================================== --}}
     {{-- LEFT — Search + Quick Select                          --}}
     {{-- ===================================================== --}}
-  <div class="flex flex-col flex-1 gap-3 p-3 overflow-hidden min-h-0">
+    <div class="flex flex-col flex-1 gap-3 p-3 overflow-hidden min-w-0">
 
         {{-- Search / Scan Bar --}}
-        <div class="bg-white rounded-xl shadow-sm p-3">
+        <div class="bg-white rounded-xl shadow-sm p-3 flex-shrink-0">
             <div class="relative">
-                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                              d="M3 9l4-4m0 0l4 4M7 5v14M21 15l-4 4m0 0l-4-4m4 4V5"/>
+                              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                     </svg>
                 </span>
                 <input
                     type="text"
                     wire:model.live.debounce.200ms="searchTerm"
                     placeholder="Scan barcode or type SKU / product name…"
-                    class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     x-ref="scanInput"
-                    @keydown.escape="$wire.showResults = false"
+                    @keydown.escape="$wire.set('showResults', false)"
                 />
 
                 {{-- Search results dropdown --}}
                 @if($showResults)
-                <div class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                <div class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
                     @foreach($searchResults as $result)
                     <button
                         wire:click="selectFromSearch({{ $result['id'] }})"
-                        class="w-full flex items-center justify-between px-4 py-3 hover:bg-indigo-50 text-left border-b border-gray-100 last:border-0"
+                        class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-indigo-50 text-left border-b border-gray-100 last:border-0"
                     >
                         <div>
                             <div class="text-sm font-medium text-gray-800">{{ $result['name'] }}</div>
                             <div class="text-xs text-gray-400">{{ $result['sku'] }}</div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right flex-shrink-0 ml-3">
                             <div class="text-sm font-semibold text-indigo-600">Rs. {{ number_format($result['selling_price'], 2) }}</div>
                             <div class="text-xs text-gray-400">Stock: {{ $result['stock_quantity'] }}</div>
                         </div>
@@ -47,11 +47,11 @@
         </div>
 
         {{-- Quick Select Grid --}}
-        <div class="bg-white rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col p-3">
+        <div class="bg-white rounded-xl shadow-sm flex flex-col p-3 min-h-0" style="flex: 1 1 0;">
 
             {{-- Category tabs --}}
             @if(count($categories) > 0)
-            <div class="flex gap-2 mb-3 flex-wrap">
+            <div class="flex gap-2 mb-3 flex-wrap flex-shrink-0">
                 @foreach($categories as $index => $category)
                 <button
                     wire:click="setActiveTab({{ $index }})"
@@ -66,22 +66,22 @@
             </div>
             @endif
 
-            {{-- Product tiles --}}
-            <div class="grid grid-cols-4 gap-2 overflow-y-auto">
+            {{-- Product tiles — scrolls internally --}}
+            <div class="grid grid-cols-4 gap-2 overflow-y-auto content-start" style="flex: 1 1 0; min-height: 0;">
                 @forelse($pinnedProducts as $product)
                 <button
                     wire:click="addFromQuickSelect({{ $product['id'] }})"
                     class="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg
-                           hover:border-indigo-400 hover:bg-indigo-50 transition text-center
+                           hover:border-indigo-400 hover:bg-indigo-50 transition text-center h-16
                            {{ $product['stock_quantity'] <= 0 ? 'opacity-40 cursor-not-allowed' : '' }}"
                     {{ $product['stock_quantity'] <= 0 ? 'disabled' : '' }}
                 >
-                    <span class="text-sm font-medium text-gray-800 leading-tight">{{ $product['name'] }}</span>
-                    <span class="text-xs text-indigo-600 mt-1">Rs. {{ number_format($product['selling_price'], 2) }}</span>
+                    <span class="text-xs font-medium text-gray-800 leading-tight line-clamp-2">{{ $product['name'] }}</span>
+                    <span class="text-xs text-indigo-600 mt-1 font-semibold">Rs. {{ number_format($product['selling_price'], 2) }}</span>
                 </button>
                 @empty
                 <div class="col-span-4 flex items-center justify-center h-24 text-sm text-gray-400">
-                    No pinned items in this category. Pin products from the admin panel.
+                    No pinned items yet. Pin products from the admin panel.
                 </div>
                 @endforelse
             </div>
@@ -92,11 +92,12 @@
     {{-- ===================================================== --}}
     {{-- RIGHT — Cart + Payment                                --}}
     {{-- ===================================================== --}}
-    <div class="w-80 flex flex-col bg-white shadow-lg h-screen shrink-0">
+    <div class="flex flex-col bg-white shadow-lg flex-shrink-0" style="width: 300px;">
 
         {{-- Cart header --}}
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Cart
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+            <h2 class="font-semibold text-gray-800 text-sm">
+                Cart
                 @if(count($cart) > 0)
                 <span class="ml-1 text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">{{ count($cart) }}</span>
                 @endif
@@ -107,7 +108,7 @@
         </div>
 
         {{-- Customer strip --}}
-        <div class="px-4 py-2 border-b border-gray-100 bg-gray-50">
+        <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
             @if($customerId)
             <div class="flex items-center justify-between text-xs">
                 <span class="text-gray-500">Customer: <span class="font-medium text-gray-800">{{ $customerName }}</span></span>
@@ -121,7 +122,7 @@
                 class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-300"
             />
             @if(strlen($customerSearch) >= 3)
-            <div class="mt-1 border border-gray-200 rounded bg-white shadow text-xs">
+            <div class="mt-1 border border-gray-200 rounded bg-white shadow text-xs max-h-32 overflow-y-auto">
                 @foreach(\App\Models\Customer::where('phone', 'like', "%{$customerSearch}%")->limit(4)->get() as $c)
                 <button wire:click="attachCustomer({{ $c->id }}, '{{ $c->name }}')"
                         class="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
@@ -133,13 +134,13 @@
             @endif
         </div>
 
-        {{-- Cart items --}}
-        <div class="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+        {{-- Cart items — scrolls internally --}}
+        <div class="overflow-y-auto px-4 py-2 space-y-1" style="flex: 1 1 0; min-height: 0;">
             @forelse($cart as $index => $item)
-            <div class="flex items-start gap-2 py-2 border-b border-gray-50">
+            <div class="flex items-center gap-2 py-2 border-b border-gray-50">
 
                 {{-- Dot: how it was added --}}
-                <span class="mt-1.5 w-2 h-2 rounded-full flex-shrink-0
+                <span class="w-2 h-2 rounded-full flex-shrink-0
                     {{ $item['added_via'] === 'barcode_scan' ? 'bg-emerald-400' :
                       ($item['added_via'] === 'quick_select' ? 'bg-amber-400' : 'bg-blue-400') }}">
                 </span>
@@ -150,15 +151,15 @@
                 </div>
 
                 {{-- Qty controls --}}
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1 flex-shrink-0">
                     <button wire:click="decrementQty({{ $index }})"
-                            class="w-6 h-6 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">−</button>
-                    <span class="w-6 text-center text-xs font-medium">{{ $item['qty'] }}</span>
+                            class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">−</button>
+                    <span class="w-5 text-center text-xs font-medium">{{ $item['qty'] }}</span>
                     <button wire:click="incrementQty({{ $index }})"
-                            class="w-6 h-6 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">+</button>
+                            class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">+</button>
                 </div>
 
-                <div class="text-xs font-semibold text-gray-800 min-w-[52px] text-right">
+                <div class="text-xs font-semibold text-gray-800 min-w-[52px] text-right flex-shrink-0">
                     Rs. {{ number_format($item['line_total'], 2) }}
                 </div>
             </div>
@@ -173,8 +174,8 @@
             @endforelse
         </div>
 
-        {{-- Totals --}}
-        <div class="px-4 py-3 border-t border-gray-100 space-y-1">
+        {{-- Totals — always visible --}}
+        <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0 space-y-1">
             <div class="flex justify-between text-xs text-gray-500">
                 <span>Subtotal</span>
                 <span>Rs. {{ number_format($subtotal, 2) }}</span>
@@ -185,23 +186,27 @@
                 <span>− Rs. {{ number_format($discountTotal, 2) }}</span>
             </div>
             @endif
-            <div class="flex justify-between text-base font-bold text-gray-800 pt-1 border-t border-gray-100">
+            <div class="flex justify-between text-sm font-bold text-gray-800 pt-1 border-t border-gray-100">
                 <span>Total</span>
                 <span>Rs. {{ number_format($grandTotal, 2) }}</span>
             </div>
         </div>
 
-        {{-- Charge button --}}
-        <div class="px-4 pb-4">
+        {{-- Charge button — always visible --}}
+        <div class="px-3 py-3 flex-shrink-0">
             <button
                 wire:click="openPayment"
-                class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition
-                       {{ empty($cart) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                @class([
+                    'w-full py-2.5 font-semibold rounded-lg transition text-sm shadow-md',
+                    'bg-indigo-600 hover:bg-indigo-700 text-white' => count($cart) > 0,
+                    'bg-indigo-200 text-indigo-700 border border-indigo-300 cursor-not-allowed' => count($cart) === 0,
+                ])
                 {{ empty($cart) ? 'disabled' : '' }}
             >
                 Charge Rs. {{ number_format($grandTotal, 2) }}
             </button>
         </div>
+
     </div>
 
     {{-- ===================================================== --}}
@@ -236,7 +241,7 @@
 
             {{-- Tendered amount --}}
             <div class="mb-3">
-                <label class="text-xs text-gray-500 mb-1 block">Amount tendered</label>
+                <label class="text-xs text-gray-500 mb-1 block">Amount tendered (Rs.)</label>
                 <input
                     type="number"
                     wire:model.live="tenderedAmount"
@@ -249,7 +254,7 @@
             {{-- Change --}}
             @if((float)$tenderedAmount >= $grandTotal && (float)$tenderedAmount > 0)
             <div class="bg-emerald-50 rounded-lg px-4 py-2 flex justify-between text-sm mb-3">
-                <span class="text-emerald-600">Change</span>
+                <span class="text-emerald-600 font-medium">Change</span>
                 <span class="font-bold text-emerald-700">Rs. {{ number_format($changeAmount, 2) }}</span>
             </div>
             @endif
@@ -263,6 +268,15 @@
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
                 />
             </div>
+
+            {{-- Validation errors --}}
+            @if($errors->any())
+            <div class="mb-3 text-xs text-red-500 space-y-1">
+                @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+                @endforeach
+            </div>
+            @endif
 
             {{-- Actions --}}
             <div class="flex gap-2">
@@ -299,10 +313,9 @@
 <script>
 function posTerminal() {
     return {
-        // Auto-focus scan input whenever the page is idle
         init() {
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('input, button, select')) {
+                if (!e.target.closest('input, button, select, a')) {
                     this.$refs.scanInput?.focus();
                 }
             });
