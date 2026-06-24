@@ -31,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/products', Products::class)->name('products.index');
 
         // Placeholders — to be built
-        Route::get('/suppliers', fn() => redirect()->route('admin.products.index'))->name('suppliers.index');
+        Route::get('/suppliers', \App\Livewire\Admin\Suppliers::class)->name('suppliers.index');
 
         Route::get('/sales', \App\Livewire\Admin\Sales::class)->name('sales.index');
 
