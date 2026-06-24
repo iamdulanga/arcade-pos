@@ -218,6 +218,18 @@ class PosTerminal extends Component
         }
     }
 
+    public function setQty(int $index, int $qty): void
+    {
+        $qty = max(1, min($qty, $this->cart[$index]['max_qty']));
+        $this->cart[$index]['qty'] = $qty;
+        $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
+            $this->cart[$index]['price'],
+            $qty,
+            $this->cart[$index]['discount']
+        );
+        $this->recalculate();
+    }
+
     public function removeFromCart(int $index): void
     {
         array_splice($this->cart, $index, 1);
@@ -348,8 +360,9 @@ class PosTerminal extends Component
                 $this->showPaymentModal = false;
 
                 // 5. Redirect to receipt
-                session()->flash('print_receipt', true);
-                return $this->redirect(route('sales.receipt', $sale->id));
+                // session()->flash('print_receipt', true);
+                // return $this->redirect(route('sales.receipt', $sale->id));
+                $this->dispatch('open-receipt', url: route('sales.receipt', $sale->id));
             });
 
         } catch (\Exception $e) {

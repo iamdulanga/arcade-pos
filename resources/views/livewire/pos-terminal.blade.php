@@ -154,7 +154,14 @@
                 <div class="flex items-center gap-1 flex-shrink-0">
                     <button wire:click="decrementQty({{ $index }})"
                             class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">−</button>
-                    <span class="w-5 text-center text-xs font-medium">{{ $item['qty'] }}</span>
+                    <input
+                        type="text"
+                        min="1"
+                        max="{{ $item['max_qty'] }}"
+                        value="{{ $item['qty'] }}"
+                        wire:change="setQty({{ $index }}, $event.target.value)"
+                        class="w-10 text-center text-xs font-medium border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 py-0.5"
+                    />
                     <button wire:click="incrementQty({{ $index }})"
                             class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs">+</button>
                 </div>
@@ -322,5 +329,13 @@ function posTerminal() {
         }
     }
 }
+
+window.addEventListener('open-receipt', (e) => {
+    window.open(
+        e.detail.url,
+        'receipt',
+        'width=480,height=700,scrollbars=yes,resizable=yes'
+    );
+});
 </script>
 @endpush
