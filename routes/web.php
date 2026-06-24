@@ -5,6 +5,7 @@ use App\Livewire\PosTerminal;
 use App\Livewire\Admin\Categories;
 use App\Livewire\Admin\Products;
 use App\Http\Controllers\SaleController;
+use App\Livewire\Admin\StockManagement;
 
 Route::view('/', 'welcome');
 
@@ -36,6 +37,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/customers', fn() => redirect()->route('dashboard'))->name('customers.index');
 
+        Route::get('/stock', StockManagement::class)->name('stock.index');
     });
 
     Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');
