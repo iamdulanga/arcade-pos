@@ -8,7 +8,7 @@ use App\Http\Controllers\SaleController;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', \App\Livewire\Admin\Dashboard::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
