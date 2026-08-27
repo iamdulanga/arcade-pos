@@ -77,7 +77,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // --- Create a default admin user ---
         $adminUser = User::firstOrCreate(
-            ['email' => 'admin@prasadtech.lk'],
+            ['email' => 'admin@admin.com'],
             [
                 'name'     => 'Admin',
                 'password' => Hash::make('password'),
@@ -86,6 +86,6 @@ class RolesAndPermissionsSeeder extends Seeder
         $adminUser->assignRole('admin');
 
         $this->command->info('Roles, permissions and default admin user created.');
-        $this->command->info('Login: admin@prasadtech.lk / password');
+        $this->command->info('Login: admin@admin.com / password');
     }
 }

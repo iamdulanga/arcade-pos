@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin' }} — Prasad Tech</title>
+    <title>{{ $title ?? 'Admin' }} — Arcade POS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -18,7 +18,7 @@
 
             {{-- Logo --}}
             <div class="h-14 flex items-center px-5 border-b border-gray-100">
-                <span class="font-bold text-indigo-600 text-base">Prasad Tech</span>
+                <span class="font-bold text-indigo-600 text-base">Arcade POS</span>
             </div>
 
             {{-- Nav --}}

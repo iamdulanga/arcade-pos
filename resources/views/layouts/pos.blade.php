@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>POS Terminal — Prasad Tech</title>
+    <title>POS Terminal — Arcade POS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
@@ -15,7 +15,7 @@
     {{-- Top bar — fixed height 40px --}}
     <div style="height: 40px;" class="flex items-center justify-between px-4 bg-white border-b border-gray-200 text-sm flex-shrink-0">
         <div class="flex items-center gap-3">
-            <span class="font-bold text-indigo-600 text-sm">Prasad Tech POS</span>
+            <span class="font-bold text-indigo-600 text-sm">Arcade POS</span>
             <span class="text-gray-400 text-xs">{{ now()->format('D, d M Y  H:i') }}</span>
         </div>
         <div class="flex items-center gap-4 text-xs text-gray-500">

@@ -132,7 +132,7 @@
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Email <span class="text-red-400">*</span></label>
-                    <input type="email" wire:model="email" placeholder="user@prasadtech.lk"
+                    <input type="email" wire:model="email" placeholder="user@user.com"
                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
                     @error('email') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                 </div>

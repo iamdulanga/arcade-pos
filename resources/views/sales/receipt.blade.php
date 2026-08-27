@@ -84,7 +84,7 @@
 
         {{-- Shop header --}}
         <div class="text-center mb-4">
-            <div class="shop-name font-bold text-lg tracking-wide">PRASAD TECH</div>
+            <div class="shop-name font-bold text-lg tracking-wide">ARCADE</div>
             <div class="text-xs text-gray-500 mt-0.5">Communication & Book Shop</div>
             <div class="text-xs text-gray-400 mt-0.5">Tel: 077-0202361</div>
         </div>
