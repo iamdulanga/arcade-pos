@@ -8,7 +8,15 @@ use App\Http\Controllers\SaleController;
 use App\Livewire\Admin\StockManagement;
 use App\Livewire\Admin\UserManagement;
 
-Route::view('/', 'welcome');
+Route::get('/', function () {
+    // If the user is already logged in, send them to the dashboard
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    
+    // Otherwise, send them to the login page
+    return redirect()->route('login');
+});
 
 Route::get('dashboard', \App\Livewire\Admin\Dashboard::class)
     ->middleware(['auth', 'verified'])
