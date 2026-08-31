@@ -22,7 +22,7 @@ class PosTerminal extends Component
 
     // -------------------------------------------------------
     // Cart
-    // Each item: [product_id, name, sku, price, qty, discount, line_total, added_via]
+    // Each item: [product_id, name, sku, price, qty, discount, line_total, added_via, max_qty]
     // -------------------------------------------------------
     public array $cart = [];
 
@@ -47,6 +47,14 @@ class PosTerminal extends Component
     public string $paymentMethod = 'cash';
     public string $tenderedAmount = '';
     public string $paymentNote = '';
+
+    // -------------------------------------------------------
+    // Discount (per cart line)
+    // -------------------------------------------------------
+    public ?int   $discountingIndex = null;   // which cart index is being discounted
+    public bool   $showDiscountModal = false;
+    public string $discountType = 'fixed';    // 'fixed' or 'percent'
+    public string $discountValue = '';
 
     // -------------------------------------------------------
     // Totals (computed from cart)
@@ -194,6 +202,7 @@ class PosTerminal extends Component
     {
         if ($this->cart[$index]['qty'] < $this->cart[$index]['max_qty']) {
             $this->cart[$index]['qty']++;
+            $this->clampDiscount($index);
             $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
                 $this->cart[$index]['price'],
                 $this->cart[$index]['qty'],
@@ -207,6 +216,7 @@ class PosTerminal extends Component
     {
         if ($this->cart[$index]['qty'] > 1) {
             $this->cart[$index]['qty']--;
+            $this->clampDiscount($index);
             $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
                 $this->cart[$index]['price'],
                 $this->cart[$index]['qty'],
@@ -216,18 +226,6 @@ class PosTerminal extends Component
         } else {
             $this->removeFromCart($index);
         }
-    }
-
-    public function setQty(int $index, int $qty): void
-    {
-        $qty = max(1, min($qty, $this->cart[$index]['max_qty']));
-        $this->cart[$index]['qty'] = $qty;
-        $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
-            $this->cart[$index]['price'],
-            $qty,
-            $this->cart[$index]['discount']
-        );
-        $this->recalculate();
     }
 
     public function removeFromCart(int $index): void
@@ -247,12 +245,107 @@ class PosTerminal extends Component
 
     private function recalculate(): void
     {
-        $this->subtotal      = array_sum(array_column($this->cart, 'line_total'));
+        $this->subtotal      = array_sum(array_map(
+            fn($item) => $item['price'] * $item['qty'],
+            $this->cart
+        ));
         $this->discountTotal = array_sum(array_column($this->cart, 'discount'));
-        $this->grandTotal    = $this->subtotal;
+        $this->grandTotal    = $this->subtotal - $this->discountTotal;
 
         $tendered            = (float) $this->tenderedAmount;
         $this->changeAmount  = max(0, $tendered - $this->grandTotal);
+    }
+
+    // -------------------------------------------------------
+    // Discount (per cart line — fixed amount or percentage)
+    // -------------------------------------------------------
+    public function openItemDiscount(int $index): void
+    {
+        $this->discountingIndex = $index;
+        $this->discountType     = 'fixed';
+        $existing                = $this->cart[$index]['discount'] ?? 0;
+        $this->discountValue    = $existing > 0 ? (string) $existing : '';
+        $this->showDiscountModal = true;
+    }
+
+    public function closeDiscountModal(): void
+    {
+        $this->showDiscountModal = false;
+        $this->discountingIndex  = null;
+        $this->discountValue     = '';
+    }
+
+    public function applyItemDiscount(): void
+    {
+        if ($this->discountingIndex === null || !isset($this->cart[$this->discountingIndex])) {
+            $this->closeDiscountModal();
+            return;
+        }
+
+        $value = (float) $this->discountValue;
+
+        if ($value < 0) {
+            $this->dispatch('notify', type: 'error', message: 'Discount cannot be negative.');
+            return;
+        }
+
+        $index         = $this->discountingIndex;
+        $item          = $this->cart[$index];
+        $lineSubtotal  = $item['price'] * $item['qty'];
+
+        if ($this->discountType === 'percent') {
+            if ($value > 100) {
+                $this->dispatch('notify', type: 'error', message: 'Percentage discount cannot exceed 100%.');
+                return;
+            }
+            $amount = round($lineSubtotal * ($value / 100), 2);
+        } else {
+            $amount = round($value, 2);
+        }
+
+        // Never let discount exceed the line's own subtotal
+        $amount = min($amount, $lineSubtotal);
+
+        $this->cart[$index]['discount']   = $amount;
+        $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
+            $item['price'],
+            $item['qty'],
+            $amount
+        );
+
+        $this->recalculate();
+        $this->closeDiscountModal();
+    }
+
+    public function removeItemDiscount(int $index): void
+    {
+        if (!isset($this->cart[$index])) {
+            return;
+        }
+
+        $this->cart[$index]['discount']   = 0.0;
+        $this->cart[$index]['line_total'] = SaleItem::computeLineTotal(
+            $this->cart[$index]['price'],
+            $this->cart[$index]['qty'],
+            0.0
+        );
+
+        $this->recalculate();
+    }
+
+    /**
+     * If qty changes and the line's discount now exceeds the new subtotal
+     * (e.g. a fixed discount larger than 1x price, after qty was reduced),
+     * clamp it down so we never discount below zero.
+     */
+    private function clampDiscount(int $index): void
+    {
+        $item         = $this->cart[$index];
+        $lineSubtotal = $item['price'] * $item['qty'];
+
+        if ($item['discount'] > $lineSubtotal) {
+            $this->cart[$index]['discount'] = $lineSubtotal;
+        }
     }
 
     // -------------------------------------------------------
@@ -360,9 +453,7 @@ class PosTerminal extends Component
                 $this->showPaymentModal = false;
 
                 // 5. Redirect to receipt
-                // session()->flash('print_receipt', true);
-                // return $this->redirect(route('sales.receipt', $sale->id));
-                $this->dispatch('open-receipt', url: route('sales.receipt', $sale->id));
+                $this->redirect(route('sales.receipt', $sale->id));
             });
 
         } catch (\Exception $e) {
