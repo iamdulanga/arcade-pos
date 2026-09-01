@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\InventoryAdjustment;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
@@ -24,6 +26,17 @@ class UserManagement extends Component
     public ?int $editingId = null;
     public bool $showForm = false;
 
+    // In-app confirmation modal (replaces browser confirm())
+    public bool   $showConfirm = false;
+    public ?int   $confirmUserId = null;
+    public string $confirmUserName = '';
+    public string $confirmAction = ''; // 'delete' | 'deactivate' | 'reactivate'
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+    }
+
     protected function rules(): array
     {
         $passwordRule = $this->editingId
@@ -31,21 +44,19 @@ class UserManagement extends Component
             : 'required|string|min:8|confirmed';
 
         return [
-            'name' => 'required|string|max:255|unique:users,name,' . ($this->editingId ?? 'NULL'),
-            'email' => 'required|email|unique:users,email,' . ($this->editingId ?? 'NULL'),
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . ($this->editingId ?? 'NULL'),
             'password' => $passwordRule,
-            'role' => 'required|in:admin,cashier,stock_manager',
+            'role'     => 'required|in:admin,cashier,stock_manager',
         ];
     }
 
     public function render()
     {
-        $users = User::when(
-            $this->search,
-            fn($q) =>
-            $q->where('name', 'like', "%{$this->search}%")
-                ->orWhere('email', 'like', "%{$this->search}%")
-        )
+        $users = User::when($this->search, fn($q) =>
+                $q->where('name', 'like', "%{$this->search}%")
+                  ->orWhere('email', 'like', "%{$this->search}%")
+            )
             ->with('roles')
             ->orderBy('name')
             ->paginate(20);
@@ -64,7 +75,6 @@ class UserManagement extends Component
 
     public function openEdit(int $id): void
     {
-        // Prevent editing yourself
         if ($id === auth()->id()) {
             session()->flash('error', 'Use your profile page to edit your own account.');
             return;
@@ -72,12 +82,12 @@ class UserManagement extends Component
 
         $user = User::findOrFail($id);
         $this->editingId = $id;
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->role = $user->roles->first()?->name ?? 'cashier';
-        $this->password = '';
+        $this->name      = $user->name;
+        $this->email     = $user->email;
+        $this->role      = $user->roles->first()?->name ?? 'cashier';
+        $this->password  = '';
         $this->password_confirmation = '';
-        $this->showForm = true;
+        $this->showForm  = true;
     }
 
     public function save(): void
@@ -88,7 +98,7 @@ class UserManagement extends Component
             $user = User::findOrFail($this->editingId);
 
             $data = [
-                'name' => $this->name,
+                'name'  => $this->name,
                 'email' => $this->email,
             ];
 
@@ -101,8 +111,8 @@ class UserManagement extends Component
             session()->flash('success', 'User updated.');
         } else {
             $user = User::create([
-                'name' => $this->name,
-                'email' => $this->email,
+                'name'     => $this->name,
+                'email'    => $this->email,
                 'password' => Hash::make($this->password),
             ]);
             $user->assignRole($this->role);
@@ -113,15 +123,87 @@ class UserManagement extends Component
         $this->resetForm();
     }
 
-    public function delete(int $id): void
+    // -----------------------------------------------------------
+    // In-app confirmation modal flow
+    // -----------------------------------------------------------
+
+    /**
+     * Open the confirmation modal for a destructive/state-changing action.
+     * $action is 'delete', 'deactivate', or 'reactivate'.
+     */
+    public function askConfirm(string $action, int $id, string $name): void
     {
         if ($id === auth()->id()) {
-            session()->flash('error', 'You cannot delete your own account.');
+            session()->flash('error', 'You cannot do this to your own account.');
             return;
         }
 
-        User::findOrFail($id)->delete();
+        $this->confirmAction   = $action;
+        $this->confirmUserId   = $id;
+        $this->confirmUserName = $name;
+        $this->showConfirm     = true;
+    }
+
+    public function cancelConfirm(): void
+    {
+        $this->showConfirm     = false;
+        $this->confirmAction   = '';
+        $this->confirmUserId   = null;
+        $this->confirmUserName = '';
+    }
+
+    /**
+     * Runs whichever action was staged by askConfirm().
+     */
+    public function confirmProceed(): void
+    {
+        $id = $this->confirmUserId;
+
+        match ($this->confirmAction) {
+            'delete'      => $this->performDelete($id),
+            'deactivate',
+            'reactivate'  => $this->performToggleActive($id),
+            default       => null,
+        };
+
+        $this->cancelConfirm();
+    }
+
+    // -----------------------------------------------------------
+    // Actual data operations (called only from confirmProceed)
+    // -----------------------------------------------------------
+
+    /**
+     * Delete a user only if they have no sales or stock history.
+     * Otherwise, deactivate them instead — this preserves audit trail
+     * on every sale/stock adjustment they're linked to, and blocks
+     * their login without erasing history.
+     */
+    private function performDelete(int $id): void
+    {
+        $user = User::findOrFail($id);
+
+        $hasHistory = Sale::where('user_id', $id)->exists()
+            || InventoryAdjustment::where('user_id', $id)->exists();
+
+        if ($hasHistory) {
+            $user->update(['is_active' => false]);
+            session()->flash('success', "{$user->name} has sales/stock history, so they were deactivated instead of deleted. Their records are preserved and they can no longer log in.");
+            return;
+        }
+
+        $user->delete();
         session()->flash('success', 'User deleted.');
+    }
+
+    private function performToggleActive(int $id): void
+    {
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => !$user->is_active]);
+
+        session()->flash('success', $user->is_active
+            ? "{$user->name} reactivated. They can log in again."
+            : "{$user->name} deactivated. They can no longer log in.");
     }
 
     public function closeForm(): void
@@ -136,13 +218,5 @@ class UserManagement extends Component
         $this->role = 'cashier';
     }
 
-    public function mount(): void
-    {
-        abort_unless(auth()->user()->hasRole('admin'), 403);
-    }
-
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
+    public function updatedSearch(): void { $this->resetPage(); }
 }
