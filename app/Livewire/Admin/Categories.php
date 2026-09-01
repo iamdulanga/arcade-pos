@@ -21,9 +21,9 @@ class Categories extends Component
     protected function rules(): array
     {
         return [
-            'name'        => 'required|string|max:100',
+            'name'        => 'required|string|max:100|unique:categories,name,' . ($this->editingId ?? 'NULL'),
             'prefix'      => 'required|string|max:5|unique:categories,prefix,' . ($this->editingId ?? 'NULL'),
-            'description' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:100',
             'is_active'   => 'boolean',
         ];
     }
@@ -115,5 +115,6 @@ class Categories extends Component
     {
         $this->showForm = false;
         $this->reset(['name', 'prefix', 'description', 'editingId']);
+        $this->resetValidation();
     }
 }
