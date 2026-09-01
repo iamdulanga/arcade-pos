@@ -31,7 +31,7 @@ class UserManagement extends Component
             : 'required|string|min:8|confirmed';
 
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:users,name,' . ($this->editingId ?? 'NULL'),
             'email' => 'required|email|unique:users,email,' . ($this->editingId ?? 'NULL'),
             'password' => $passwordRule,
             'role' => 'required|in:admin,cashier,stock_manager',

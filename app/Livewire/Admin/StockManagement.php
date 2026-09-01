@@ -132,6 +132,7 @@ class StockManagement extends Component
     public function closeForm(): void
     {
         $this->showForm = false;
+        $this->resetForm();
     }
 
     public function closeHistory(): void

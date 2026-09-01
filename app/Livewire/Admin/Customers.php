@@ -30,7 +30,7 @@ class Customers extends Component
     protected function rules(): array
     {
         return [
-            'name'    => 'required|string|max:255',
+            'name'    => 'required|string|max:30|unique:customers,name,' . ($this->editingId ?? 'NULL'),
             'phone'   => 'nullable|string|max:20|unique:customers,phone,' . ($this->editingId ?? 'NULL'),
             'email'   => 'nullable|email|max:255|unique:customers,email,' . ($this->editingId ?? 'NULL'),
             'address' => 'nullable|string|max:500',
@@ -130,6 +130,7 @@ class Customers extends Component
     {
         $this->showForm = false;
         $this->resetForm();
+        $this->resetValidation();
     }
 
     public function closeHistory(): void

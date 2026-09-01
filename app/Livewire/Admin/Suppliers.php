@@ -26,7 +26,7 @@ class Suppliers extends Component
     protected function rules(): array
     {
         return [
-            'name'           => 'required|string|max:255',
+            'name'           => 'required|string|max:255|unique:suppliers,name,' . ($this->editingId ?? 'NULL'),
             'contact_person' => 'nullable|string|max:255',
             'phone'          => 'nullable|string|max:20',
             'email'          => 'nullable|email|max:255',
@@ -34,7 +34,7 @@ class Suppliers extends Component
             'is_active'      => 'boolean',
         ];
     }
-
+    
     public function render()
     {
         $suppliers = Supplier::when($this->search, fn($q) =>

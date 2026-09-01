@@ -39,7 +39,7 @@ class Products extends Component
     protected function rules(): array
     {
         return [
-            'name'           => 'required|string|max:255',
+            'name'           => 'required|string|max:255|unique:products,name,' . ($this->editingId ?? 'NULL'),
             'barcode'        => 'nullable|string|max:100|unique:products,barcode,' . ($this->editingId ?? 'NULL'),
             'has_barcode'    => 'boolean',
             'category_id'    => 'required|exists:categories,id',
@@ -165,6 +165,7 @@ class Products extends Component
     {
         $this->showForm = false;
         $this->resetForm();
+        $this->resetValidation();
     }
 
     private function resetForm(): void
