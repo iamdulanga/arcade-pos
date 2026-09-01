@@ -31,19 +31,21 @@ class UserManagement extends Component
             : 'required|string|min:8|confirmed';
 
         return [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . ($this->editingId ?? 'NULL'),
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . ($this->editingId ?? 'NULL'),
             'password' => $passwordRule,
-            'role'     => 'required|in:admin,cashier,stock_manager',
+            'role' => 'required|in:admin,cashier,stock_manager',
         ];
     }
 
     public function render()
     {
-        $users = User::when($this->search, fn($q) =>
-                $q->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('email', 'like', "%{$this->search}%")
-            )
+        $users = User::when(
+            $this->search,
+            fn($q) =>
+            $q->where('name', 'like', "%{$this->search}%")
+                ->orWhere('email', 'like', "%{$this->search}%")
+        )
             ->with('roles')
             ->orderBy('name')
             ->paginate(20);
@@ -70,12 +72,12 @@ class UserManagement extends Component
 
         $user = User::findOrFail($id);
         $this->editingId = $id;
-        $this->name      = $user->name;
-        $this->email     = $user->email;
-        $this->role      = $user->roles->first()?->name ?? 'cashier';
-        $this->password  = '';
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->role = $user->roles->first()?->name ?? 'cashier';
+        $this->password = '';
         $this->password_confirmation = '';
-        $this->showForm  = true;
+        $this->showForm = true;
     }
 
     public function save(): void
@@ -86,7 +88,7 @@ class UserManagement extends Component
             $user = User::findOrFail($this->editingId);
 
             $data = [
-                'name'  => $this->name,
+                'name' => $this->name,
                 'email' => $this->email,
             ];
 
@@ -99,8 +101,8 @@ class UserManagement extends Component
             session()->flash('success', 'User updated.');
         } else {
             $user = User::create([
-                'name'     => $this->name,
-                'email'    => $this->email,
+                'name' => $this->name,
+                'email' => $this->email,
                 'password' => Hash::make($this->password),
             ]);
             $user->assignRole($this->role);
@@ -134,5 +136,13 @@ class UserManagement extends Component
         $this->role = 'cashier';
     }
 
-    public function updatedSearch(): void { $this->resetPage(); }
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
 }

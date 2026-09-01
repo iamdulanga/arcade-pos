@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="font-size: 110%;>
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin' }} — Arcade POS</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+    <meta charset=" utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ $title ?? 'Admin' }} — Arcade POS</title>
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+@livewireStyles
 </head>
 
 <body class="antialiased bg-gray-50 text-gray-800">
@@ -99,15 +99,17 @@
                 <div class="pt-3 pb-1 px-3">
                     <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Settings</span>
                 </div>
-
-                <a href="{{ route('admin.users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition
-                        {{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Users
-                </a>
+                
+                @if(auth()->user()->hasRole('admin'))
+                    <a href="{{ route('admin.users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition
+                            {{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        Users
+                    </a>
+                @endif
 
                 <a href="{{ route('admin.customers.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition
                       {{ request()->routeIs('admin.customers.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
@@ -122,16 +124,16 @@
 
             {{-- User / logout --}}
             <div class="border-t border-gray-100 p-3">
-                <div class="flex items-center gap-2 px-2 py-1.5">
-                    <div
-                        class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 flex-shrink-0">
+                <a href="{{ route('profile') }}"
+                class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition {{ request()->routeIs('profile') ? 'bg-indigo-50' : '' }}">
+                    <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 flex-shrink-0">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="text-xs font-medium text-gray-800 truncate">{{ auth()->user()->name }}</div>
                         <div class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</div>
                     </div>
-                </div>
+                </a>
                 <form method="POST" action="/logout" class="mt-1">
                     @csrf
                     <button type="submit"
